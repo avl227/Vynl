@@ -25,13 +25,14 @@
      4. **Libraries \- react-query, spotify-web-api-node, express, cors, dotenv, bcrypt (password hashing)**  
    * High-level architecture diagram (if applicable)  
    * Prototype: (replace with actual diagram if applicable)  
-    \[ React Frontend \]  
-            |  
-            | (REST API / HTTP Requests)  
-            v  
-    \[ Node.js \+ Express Backend \]  
-            |  
-            | (ORM / Query Layer)  
-            v  
-    \[ PostgreSQL Database (Supabase) \]
-
+```
+[ React Frontend ]  
+        |  
+        | (REST API / HTTP Requests)  
+        v  
+[ Node.js + Express Backend ]  
+        |  
+        | (ORM / Query Layer)  
+        v  
+[ PostgreSQL Database (Supabase) ]
+```
