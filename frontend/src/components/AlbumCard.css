@@ -1,0 +1,18 @@
+.album-card {
+  border: 1px solid #ddd;
+  padding: 12px;
+  border-radius: 8px;
+  max-width: 220px;
+}
+.album-art {
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+.album-title {
+  margin: 8px 0 4px 0;
+}
+.album-artist, .album-rating {
+  margin: 0;
+  color: #555;
+}
