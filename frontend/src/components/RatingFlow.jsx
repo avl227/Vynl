@@ -15,15 +15,8 @@ export default function RatingFlow({ album, existingRatings, onComplete }) {
   }
 
   const handleSentimentChoice = (choice) => {
+    // Only record the sentiment for now; user can add a note then click Done
     setSentiment(choice)
-    // If no existing albums, skip comparisons and save immediately
-    if (existingRatings.length === 0) {
-      const sentimentScores = { liked: 7, fine: 5, disliked: 2 }
-      onComplete(sentimentScores[choice], note)
-    } else {
-      // Move to comparisons
-      setInComparison(true)
-    }
   }
 
   const handleComparisonComplete = (finalScore) => {
@@ -90,7 +83,7 @@ export default function RatingFlow({ album, existingRatings, onComplete }) {
             }}
             className="submit-button"
           >
-            {existingRatings.length === 0 ? 'Save Rating' : 'Continue to Ranking'}
+            Done
           </button>
         )}
       </div>

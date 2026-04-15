@@ -102,6 +102,13 @@
   margin: 0;
 }
 
+.rating-note {
+  margin-top: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: #000;
+}
+
 .rate-album-button {
   background: #ff8c42;
   border: 1px solid #000;

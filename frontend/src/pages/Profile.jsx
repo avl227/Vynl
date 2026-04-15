@@ -1,8 +1,10 @@
 import React from 'react'
-import AlbumList from '../components/AlbumList'
+import { useNavigate } from 'react-router-dom'
 import { getAllRatings, removeRating } from '../utils/ratings'
+import './Profile.css'
 
 export default function Profile(){
+  const navigate = useNavigate()
   const ratings = getAllRatings()
 
   const handleRemove = (id) => {
@@ -11,23 +13,38 @@ export default function Profile(){
   }
 
   return (
-    <main style={{padding:20}}>
-      <h2>Your Profile</h2>
-      <p>Username: demo_user</p>
-
-      <h3>Your Rated Albums</h3>
-      {ratings.length === 0 && <p>You haven't rated any albums yet.</p>}
-      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(220px,1fr))',gap:16}}>
-        {ratings.map(r => (
-          <div key={r.id} style={{border:'1px solid #eee',padding:12,borderRadius:6}}>
-            <img src={r.album.artworkUrl} alt={r.album.title} style={{width:'100%',borderRadius:4}} />
-            <h4>{r.album.title}</h4>
-            <p style={{margin:0}}>by {r.album.artist}</p>
-            <p style={{margin:0}}>Your rating: {r.rating}</p>
-            <button onClick={() => handleRemove(r.id)} style={{marginTop:8}}>Remove</button>
+    <main className="profile-page">
+      <header className="profile-header">
+        <img className="profile-photo" src="https://via.placeholder.com/120?text=Photo" alt="Profile" />
+        <div className="profile-meta">
+          <h2>demo_user</h2>
+          <p className="profile-bio">Vinyl collector. Rating everything I spin.</p>
+          <div className="profile-stats">
+            <div><strong>{ratings.length}</strong><div>Ratings</div></div>
+            <div><strong>123</strong><div>Followers</div></div>
+            <div><strong>89</strong><div>Following</div></div>
           </div>
+        </div>
+      </header>
+
+      <section className="ratings-feed">
+        {ratings.length === 0 && <p className="empty">You haven't rated any albums yet.</p>}
+
+        {ratings.map(r => (
+          <article key={r.id} className="rating-item" onClick={() => navigate(`/album/${r.id}`)}>
+            <img src={r.album.artworkUrl} alt={r.album.title} className="rating-art" />
+            <div className="rating-body">
+              <h4 className="rating-title">{r.album.title}</h4>
+              <p className="rating-artist">{r.album.artist}</p>
+              <p className="rating-score">My rating: {r.rating}</p>
+              {r.note && <p className="rating-note">{r.note}</p>}
+            </div>
+            <div className="rating-actions">
+              <button className="remove-btn" onClick={(e) => { e.stopPropagation(); handleRemove(r.id) }}>Remove</button>
+            </div>
+          </article>
         ))}
-      </div>
+      </section>
     </main>
   )
 }

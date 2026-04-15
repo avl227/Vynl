@@ -33,6 +33,7 @@ export default function AlbumDetail() {
   }
 
   const displayRating = ratings?.myRating ?? existing?.rating
+  const displayNote = ratings?.note ?? existing?.note
 
   return (
     <main className="album-detail">
@@ -65,6 +66,7 @@ export default function AlbumDetail() {
             <div className="rating-item">
               <p className="rating-label">My Rating</p>
               <Rating value={displayRating} />
+              {displayNote && <p className="rating-note">{displayNote}</p>}
             </div>
             <div className="rating-item">
               <p className="rating-label">Friend Rating</p>

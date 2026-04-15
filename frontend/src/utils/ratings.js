@@ -32,7 +32,9 @@ export function getRating(id) {
 
 export function getAllRatings() {
   const store = readStore()
-  return Object.entries(store).map(([id, value]) => ({ id, ...value }))
+  return Object.entries(store)
+    .map(([id, value]) => ({ id, ...value }))
+    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
 }
 
 export function removeRating(id) {
