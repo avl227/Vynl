@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import ComparisonFlow from './ComparisonFlow'
-import { scoreAlbumByRank } from '../utils/ratings'
 import './RatingFlow.css'
 
 export default function RatingFlow({ album, existingRatings, onComplete }) {
@@ -15,12 +14,11 @@ export default function RatingFlow({ album, existingRatings, onComplete }) {
   }
 
   const handleSentimentChoice = (choice) => {
-    // Only record the sentiment for now; user can add a note then click Done
     setSentiment(choice)
   }
 
-  const handleComparisonComplete = (finalScore) => {
-    onComplete(finalScore, note)
+  const handleComparisonComplete = (finalElo) => {
+    onComplete(finalElo, note)
   }
 
   const handleNoteChange = (e) => {
@@ -49,7 +47,7 @@ export default function RatingFlow({ album, existingRatings, onComplete }) {
             <button
               key={key}
               onClick={() => handleSentimentChoice(key)}
-              className={`sentiment-button ${sentiment === key ? 'active' : ''}`}
+              className={`sentiment-button ${key} ${sentiment === key ? 'active' : ''}`}
             >
               <div className="sentiment-label">{val.label}</div>
               <div className="sentiment-description">{val.description}</div>
@@ -75,8 +73,9 @@ export default function RatingFlow({ album, existingRatings, onComplete }) {
           <button
             onClick={() => {
               if (existingRatings.length === 0) {
-                const sentimentScores = { liked: 7, fine: 5, disliked: 2 }
-                onComplete(sentimentScores[sentiment], note)
+                // First album, use initial Elo based on sentiment
+                const sentimentElos = { liked: 1600, fine: 1500, disliked: 1400 }
+                onComplete(sentimentElos[sentiment], note)
               } else {
                 setInComparison(true)
               }

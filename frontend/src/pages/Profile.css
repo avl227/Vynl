@@ -39,6 +39,27 @@
   text-align: center;
 }
 
+.profile-actions {
+  margin-bottom: 20px;
+}
+
+.rated-albums-button {
+  background: #ff8c42;
+  border: 1px solid #000;
+  color: #000;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  padding: 14px 20px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rated-albums-button:hover {
+  background: #ff7a1a;
+  color: #fff1cd;
+}
+
 .ratings-feed {
   display: flex;
   flex-direction: column;
@@ -75,6 +96,33 @@
   margin: 0 0 8px 0;
   font-family: 'DM Mono', monospace;
   font-size: 13px;
+}
+
+.ranked-number {
+  margin: 0 0 8px 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.activity-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+}
+
+.activity-text {
+  font-family: 'Inter', sans-serif;
+  margin: 0 0 4px 0;
+  font-weight: 600;
+}
+
+.activity-date {
+  margin: 0 0 10px 0;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: #000;
 }
 
 .rating-score {

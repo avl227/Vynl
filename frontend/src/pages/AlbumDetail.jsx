@@ -25,14 +25,15 @@ export default function AlbumDetail() {
 
   const existing = getRating(album.id)
   const allRatings = getAllRatings()
+  const existingRatings = allRatings.filter(r => r.id !== String(album.id))
 
-  const handleRatingComplete = (score, note) => {
-    setRating(album.id, { id: album.id, title: album.title, artist: album.artist, artworkUrl: album.artworkUrl }, score, note)
+  const handleRatingComplete = (elo, note) => {
+    setRating(album.id, { id: album.id, title: album.title, artist: album.artist, artworkUrl: album.artworkUrl }, elo, note)
     setRatingInProgress(false)
-    setRatings({ myRating: score, note })
+    setRatings({ myRating: elo, note })
   }
 
-  const displayRating = ratings?.myRating ?? existing?.rating
+  const displayRating = ratings?.myRating ?? existing?.elo
   const displayNote = ratings?.note ?? existing?.note
 
   return (
@@ -74,12 +75,12 @@ export default function AlbumDetail() {
             </div>
           </div>
 
-          {!displayRating && !ratingInProgress && (
+          {!ratingInProgress && (
             <button
               onClick={() => setRatingInProgress(true)}
               className="rate-album-button"
             >
-              Rate Album
+              {displayRating ? 'Edit Rating' : 'Rate Album'}
             </button>
           )}
         </div>

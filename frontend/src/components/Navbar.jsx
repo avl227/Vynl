@@ -20,16 +20,25 @@ export default function Navbar({ searchValue, onSearchChange }) {
 
   return (
     <nav className="navbar">
-      <button onClick={handleHomeClick} className="navbar-brand">Vynl</button>
-      <SearchBar value={searchValue} onChange={handleSearch} />
-      <div className="navbar-links">
-        <Link to="/" onClick={handleHomeClick}>Home</Link>
-        <Link to="/profile">Profile</Link>
+      <button onClick={handleHomeClick} className="navbar-panel navbar-logo">
+        Vynl
+      </button>
+
+      <div className="navbar-panel navbar-search">
+        <SearchBar value={searchValue} onChange={handleSearch} />
       </div>
-      <div className="navbar-auth">
-        <Link to="/login">Log in</Link>
-        <Link to="/signup">Sign up</Link>
-      </div>
+
+      <Link to="/profile" className="navbar-panel navbar-profile">
+        <img
+          src="https://via.placeholder.com/40"
+          alt="Profile"
+          className="profile-image"
+        />
+        <span className="profile-username">demo_user</span>
+        <span className="profile-chevron" aria-hidden="true">
+          ▼
+        </span>
+      </Link>
     </nav>
   )
 }

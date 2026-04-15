@@ -1,53 +1,81 @@
 import React, { useState, useMemo } from 'react'
-import { scoreAlbumByRank } from '../utils/ratings'
+import { compareAlbums, getAllRatings } from '../utils/ratings'
 
 export default function ComparisonFlow({ newAlbum, existingAlbums, onComplete, sentiment }) {
-  const sorted = useMemo(() => {
-    return existingAlbums.sort((a, b) => b.rating - a.rating)
+  const [comparisons, setComparisons] = useState([])
+  const [currentComparison, setCurrentComparison] = useState(0)
+  const [isComplete, setIsComplete] = useState(false)
+
+  // Select 3 albums at different rating levels for comparison
+  const selectedAlbums = useMemo(() => {
+    if (existingAlbums.length === 0) return []
+    const sorted = [...existingAlbums].sort((a, b) => b.elo - a.elo)
+    const len = sorted.length
+    if (len <= 3) return sorted
+    // Select top, middle, bottom
+    return [sorted[0], sorted[Math.floor(len/2)], sorted[len-1]]
   }, [existingAlbums])
 
-  const [low, setLow] = useState(0)
-  const [high, setHigh] = useState(sorted.length)
-  const [step, setStep] = useState(0)
+  const handleChoice = (choice, isTie = false) => {
+    const currentAlbum = selectedAlbums[currentComparison]
+    if (!currentAlbum) return
 
-  const mid = Math.floor((low + high) / 2)
-  const isDone = high - low <= 1
-  const comparison = sorted[mid]
-
-  const handlePrefer = (choice) => {
+    let winnerId, loserId
     if (choice === 'new') {
-      setHigh(mid)
-    } else {
-      setLow(mid + 1)
+      winnerId = String(newAlbum.collectionId)
+      loserId = currentAlbum.id
+    } else if (choice === 'existing') {
+      winnerId = currentAlbum.id
+      loserId = String(newAlbum.collectionId)
+    } else if (isTie) {
+      // For tie, we compare new vs existing as tie
+      compareAlbums(String(newAlbum.collectionId), currentAlbum.id, true)
     }
-    setStep(step + 1)
+
+    if (!isTie) {
+      compareAlbums(winnerId, loserId, false)
+    }
+
+    const newComparisons = [...comparisons, { choice, isTie, opponent: currentAlbum }]
+    setComparisons(newComparisons)
+
+    if (currentComparison < selectedAlbums.length - 1) {
+      setCurrentComparison(currentComparison + 1)
+    } else {
+      setIsComplete(true)
+      // Get the final Elo for the new album
+      const allRatings = getAllRatings()
+      const newAlbumRating = allRatings.find(r => r.id === newAlbum.collectionId.toString())
+      const finalElo = newAlbumRating ? newAlbumRating.elo : 1500
+      onComplete(finalElo)
+    }
   }
 
-  const handleComplete = () => {
-    const finalPosition = Math.floor((low + high) / 2)
-    const finalScore = scoreAlbumByRank(finalPosition, sorted.length + 1)
-    onComplete(finalScore, finalPosition)
+  if (existingAlbums.length === 0) {
+    // No existing albums, just complete with initial rating
+    onComplete(1500)
+    return null
   }
 
-  if (isDone) {
+  if (isComplete) {
     return (
-      <section style={{ marginTop: 20, padding: 12, background: '#f9f9f9', borderRadius: 6 }}>
+      <section style={{ marginTop: 20, padding: 12, background: '#f9f9f9', border: '1px solid #000' }}>
         <h3>All set! 👌</h3>
         <p>
-          Based on your comparisons, <strong>{newAlbum.title}</strong> ranks #{
-            Math.floor((low + high) / 2) + 1
-          } in your list with a score of {scoreAlbumByRank(Math.floor((low + high) / 2), sorted.length + 1)}.
+          Based on your comparisons, <strong>{newAlbum.title}</strong> has been rated.
         </p>
-        <button onClick={handleComplete} style={{ marginTop: 10 }}>
-          Save This Rating
+        <button onClick={() => onComplete()} style={{ marginTop: 10, background: '#ff8c42', border: '1px solid #000', padding: '8px 16px' }}>
+          Done
         </button>
       </section>
     )
   }
 
+  const currentAlbum = selectedAlbums[currentComparison]
+
   return (
-    <section style={{ marginTop: 20, padding: 12, background: '#f9f9f9', borderRadius: 6 }}>
-      <h3>Compare Albums (Question {step + 1})</h3>
+    <section style={{ marginTop: 20, padding: 12, background: '#f9f9f9', border: '1px solid #000' }}>
+      <h3>Compare Albums (Question {currentComparison + 1} of {selectedAlbums.length})</h3>
       <p style={{ fontSize: '0.9rem', color: '#666' }}>
         Which do you prefer?
       </p>
@@ -62,12 +90,11 @@ export default function ComparisonFlow({ newAlbum, existingAlbums, onComplete, s
       >
         {/* New Album */}
         <button
-          onClick={() => handlePrefer('new')}
+          onClick={() => handleChoice('new')}
           style={{
             padding: 12,
             border: '2px solid transparent',
             background: '#fff',
-            borderRadius: 6,
             cursor: 'pointer',
             transition: 'all 0.2s',
             textAlign: 'center',
@@ -78,7 +105,7 @@ export default function ComparisonFlow({ newAlbum, existingAlbums, onComplete, s
           <img
             src={newAlbum.artworkUrl}
             alt={newAlbum.title}
-            style={{ width: 100, height: 100, borderRadius: 4 }}
+            style={{ width: 100, height: 100 }}
           />
           <p style={{ margin: '8px 0 0 0', fontSize: '0.9rem', fontWeight: 'bold' }}>
             {newAlbum.title}
@@ -90,12 +117,11 @@ export default function ComparisonFlow({ newAlbum, existingAlbums, onComplete, s
 
         {/* Comparison Album */}
         <button
-          onClick={() => handlePrefer('existing')}
+          onClick={() => handleChoice('existing')}
           style={{
             padding: 12,
             border: '2px solid transparent',
             background: '#fff',
-            borderRadius: 6,
             cursor: 'pointer',
             transition: 'all 0.2s',
             textAlign: 'center',
@@ -104,19 +130,31 @@ export default function ComparisonFlow({ newAlbum, existingAlbums, onComplete, s
           onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
         >
           <img
-            src={comparison.album.artworkUrl}
-            alt={comparison.album.title}
-            style={{ width: 100, height: 100, borderRadius: 4 }}
+            src={currentAlbum.album.artworkUrl}
+            alt={currentAlbum.album.title}
+            style={{ width: 100, height: 100 }}
           />
           <p style={{ margin: '8px 0 0 0', fontSize: '0.9rem', fontWeight: 'bold' }}>
-            {comparison.album.title}
+            {currentAlbum.album.title}
           </p>
           <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#666' }}>
-            {comparison.album.artist}
+            {currentAlbum.album.artist}
           </p>
-          <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: '#999' }}>
-            (Your score: {comparison.rating})
-          </p>
+        </button>
+      </div>
+
+      <div style={{ textAlign: 'center', marginTop: 16 }}>
+        <button
+          onClick={() => handleChoice(null, true)}
+          style={{
+            background: '#fff1cd',
+            border: '1px solid #000',
+            padding: '8px 16px',
+            cursor: 'pointer',
+            fontSize: '0.9rem'
+          }}
+        >
+          They're tied
         </button>
       </div>
     </section>

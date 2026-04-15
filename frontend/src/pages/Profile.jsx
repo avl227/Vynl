@@ -1,15 +1,39 @@
-import React from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getAllRatings, removeRating } from '../utils/ratings'
+import { getAllRatings, removeRating, eloToDisplayScore, getAllElos } from '../utils/ratings'
 import './Profile.css'
 
 export default function Profile(){
   const navigate = useNavigate()
+  const [topRatedView, setTopRatedView] = useState(false)
+  const [updateTrigger, setUpdateTrigger] = useState(0)
   const ratings = getAllRatings()
+  const allElos = getAllElos()
+
+  useEffect(() => {
+    const handleRatingsChange = () => {
+      setUpdateTrigger(prev => prev + 1)
+    }
+    window.addEventListener('ratingsChanged', handleRatingsChange)
+    return () => window.removeEventListener('ratingsChanged', handleRatingsChange)
+  }, [])
+
+  const sortedByRating = useMemo(() => {
+    return [...ratings].sort((a, b) => {
+      if (b.elo !== a.elo) return b.elo - a.elo
+      return (b.updatedAt || 0) - (a.updatedAt || 0)
+    })
+  }, [ratings])
+
+  const displayedRatings = topRatedView ? sortedByRating : ratings
 
   const handleRemove = (id) => {
     removeRating(id)
     window.location.reload()
+  }
+
+  const getDisplayScore = (elo) => {
+    return eloToDisplayScore(elo, allElos).toFixed(1)
   }
 
   return (
@@ -27,17 +51,35 @@ export default function Profile(){
         </div>
       </header>
 
+      <div className="profile-actions">
+        <button className="rated-albums-button" onClick={() => setTopRatedView(!topRatedView)}>
+          {topRatedView ? 'Recent Activity' : `Rated Albums [${ratings.length}]`}
+        </button>
+      </div>
+
       <section className="ratings-feed">
+        <h3 className="activity-title">{topRatedView ? 'Ranked Albums' : 'Recent Activity'}</h3>
         {ratings.length === 0 && <p className="empty">You haven't rated any albums yet.</p>}
 
-        {ratings.map(r => (
+        {displayedRatings.map((r, index) => (
           <article key={r.id} className="rating-item" onClick={() => navigate(`/album/${r.id}`)}>
             <img src={r.album.artworkUrl} alt={r.album.title} className="rating-art" />
             <div className="rating-body">
-              <h4 className="rating-title">{r.album.title}</h4>
-              <p className="rating-artist">{r.album.artist}</p>
-              <p className="rating-score">My rating: {r.rating}</p>
-              {r.note && <p className="rating-note">{r.note}</p>}
+              {topRatedView ? (
+                <>
+                  <p className="ranked-number">#{index + 1}</p>
+                  <p className="rating-title">{r.album.title}</p>
+                  <p className="rating-artist">{r.album.artist}</p>
+                  <p className="rating-score">Score: {getDisplayScore(r.elo)}</p>
+                </>
+              ) : (
+                <>
+                  <p className="activity-text">You ranked {r.album.title}</p>
+                  <p className="activity-date">{new Date(r.updatedAt).toLocaleDateString(undefined, {year:'numeric',month:'short',day:'numeric'})}</p>
+                  <p className="rating-score">Score: {getDisplayScore(r.elo)}</p>
+                  {r.note && <p className="rating-note">{r.note}</p>}
+                </>
+              )}
             </div>
             <div className="rating-actions">
               <button className="remove-btn" onClick={(e) => { e.stopPropagation(); handleRemove(r.id) }}>Remove</button>
