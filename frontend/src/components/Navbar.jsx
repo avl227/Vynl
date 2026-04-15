@@ -1,14 +1,33 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import SearchBar from './SearchBar'
+import './Navbar.css'
 
-export default function Navbar() {
+export default function Navbar({ searchValue, onSearchChange }) {
+  const navigate = useNavigate()
+
+  const handleSearch = (value) => {
+    onSearchChange(value)
+    if (value.trim()) {
+      navigate('/')
+    }
+  }
+
+  const handleHomeClick = () => {
+    onSearchChange('')
+    navigate('/')
+  }
+
   return (
-    <nav style={{display:'flex',gap:12,padding:12,background:'#fff',borderBottom:'1px solid #eee'}}>
-      <Link to="/">Vynl</Link>
-      <Link to="/">Home</Link>
-      <Link to="/profile">Profile</Link>
-      <div style={{marginLeft:'auto'}}>
-        <Link to="/login" style={{marginRight:8}}>Log in</Link>
+    <nav className="navbar">
+      <button onClick={handleHomeClick} className="navbar-brand">Vynl</button>
+      <SearchBar value={searchValue} onChange={handleSearch} />
+      <div className="navbar-links">
+        <Link to="/" onClick={handleHomeClick}>Home</Link>
+        <Link to="/profile">Profile</Link>
+      </div>
+      <div className="navbar-auth">
+        <Link to="/login">Log in</Link>
         <Link to="/signup">Sign up</Link>
       </div>
     </nav>

@@ -1,4 +1,5 @@
 import React from 'react'
+import './SearchBar.css'
 
 export default function SearchBar({ value, onChange }) {
   return (
@@ -7,7 +8,7 @@ export default function SearchBar({ value, onChange }) {
       placeholder="Search albums..."
       value={value}
       onChange={e => onChange(e.target.value)}
-      style={{padding:8, width:'100%', maxWidth:480, marginBottom:12}}
+      className="search-bar"
     />
   )
 }

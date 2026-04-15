@@ -1,0 +1,55 @@
+.discover-page {
+  padding: 40px 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.discover-header {
+  border-bottom: 1px solid #000;
+  padding-bottom: 20px;
+  margin-bottom: 40px;
+}
+
+.discover-header h1 {
+  font-family: 'Inter', sans-serif;
+  font-size: 48px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+}
+
+.discover-header p {
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  margin: 0;
+  color: #000;
+}
+
+.albums-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.loading,
+.no-results {
+  grid-column: 1 / -1;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  color: #000;
+  border: 1px solid #000;
+  padding: 20px;
+  text-align: center;
+  background: #fff1cd;
+}
+
+@media (max-width: 1024px) {
+  .albums-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .albums-grid {
+    grid-template-columns: 1fr;
+  }
+}

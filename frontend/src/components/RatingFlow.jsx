@@ -1,24 +1,25 @@
 import React, { useState } from 'react'
 import ComparisonFlow from './ComparisonFlow'
 import { scoreAlbumByRank } from '../utils/ratings'
+import './RatingFlow.css'
 
 export default function RatingFlow({ album, existingRatings, onComplete }) {
   const [sentiment, setSentiment] = useState(null)
+  const [note, setNote] = useState('')
   const [inComparison, setInComparison] = useState(false)
 
   const sentimentLabels = {
-    loved: { label: 'I loved it!', icon: '❤️' },
-    liked: { label: 'I liked it', icon: '👍' },
-    fine: { label: 'It was fine', icon: '😐' },
-    disliked: { label: "I didn't like it", icon: '👎' }
+    liked: { label: 'I liked it', description: 'It was a good album' },
+    fine: { label: 'It was ok', description: 'It had some good moments' },
+    disliked: { label: "I didn't like it", description: 'Not really my thing' }
   }
 
   const handleSentimentChoice = (choice) => {
     setSentiment(choice)
     // If no existing albums, skip comparisons and save immediately
     if (existingRatings.length === 0) {
-      const sentimentScores = { loved: 9, liked: 7, fine: 5, disliked: 2 }
-      onComplete(sentimentScores[choice])
+      const sentimentScores = { liked: 7, fine: 5, disliked: 2 }
+      onComplete(sentimentScores[choice], note)
     } else {
       // Move to comparisons
       setInComparison(true)
@@ -26,7 +27,11 @@ export default function RatingFlow({ album, existingRatings, onComplete }) {
   }
 
   const handleComparisonComplete = (finalScore) => {
-    onComplete(finalScore)
+    onComplete(finalScore, note)
+  }
+
+  const handleNoteChange = (e) => {
+    setNote(e.target.value)
   }
 
   if (inComparison) {
@@ -40,43 +45,54 @@ export default function RatingFlow({ album, existingRatings, onComplete }) {
     )
   }
 
-  if (sentiment) {
-    return null // This shouldn't render if no albums (gets completed immediately)
-  }
-
   return (
-    <section style={{ marginTop: 20, padding: 16, background: '#f9f9f9', borderRadius: 6 }}>
-      <h3>How did you feel about this album?</h3>
-      <div style={{ display: 'flex', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
-        {Object.entries(sentimentLabels).map(([key, val]) => (
+    <section className="rating-flow">
+      <h2>Rate "{album.title}"</h2>
+      
+      <div className="sentiment-section">
+        <h3>How did you feel about this album?</h3>
+        <div className="sentiment-buttons">
+          {Object.entries(sentimentLabels).map(([key, val]) => (
+            <button
+              key={key}
+              onClick={() => handleSentimentChoice(key)}
+              className={`sentiment-button ${sentiment === key ? 'active' : ''}`}
+            >
+              <div className="sentiment-label">{val.label}</div>
+              <div className="sentiment-description">{val.description}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="note-section">
+        <label htmlFor="rating-note" className="note-label">Add a note (optional)</label>
+        <textarea
+          id="rating-note"
+          className="note-textarea"
+          placeholder="What did you think about this album? Favorite tracks? Any thoughts..."
+          value={note}
+          onChange={handleNoteChange}
+          rows={4}
+        />
+      </div>
+
+      <div className="button-group">
+        {sentiment && (
           <button
-            key={key}
-            onClick={() => handleSentimentChoice(key)}
-            style={{
-              padding: '12px 16px',
-              background: '#fff',
-              border: '2px solid #ddd',
-              borderRadius: 6,
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              fontSize: '0.95rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
+            onClick={() => {
+              if (existingRatings.length === 0) {
+                const sentimentScores = { liked: 7, fine: 5, disliked: 2 }
+                onComplete(sentimentScores[sentiment], note)
+              } else {
+                setInComparison(true)
+              }
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#0a74da'
-              e.currentTarget.style.background = '#f0f7ff'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = '#ddd'
-              e.currentTarget.style.background = '#fff'
-            }}
+            className="submit-button"
           >
-            <span style={{ fontSize: '1.2rem' }}>{val.icon}</span>
-            {val.label}
+            {existingRatings.length === 0 ? 'Save Rating' : 'Continue to Ranking'}
           </button>
-        ))}
+        )}
       </div>
     </section>
   )

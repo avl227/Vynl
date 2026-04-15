@@ -1,18 +1,20 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
-import Home from './pages/Home'
+import Discover from './pages/Discover'
 import AlbumDetail from './pages/AlbumDetail'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Profile from './pages/Profile'
 
 export default function App() {
+  const [searchValue, setSearchValue] = useState('')
+
   return (
     <BrowserRouter>
-      <Navbar />
+      <Navbar searchValue={searchValue} onSearchChange={setSearchValue} />
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Discover searchValue={searchValue} />} />
         <Route path="/album/:id" element={<AlbumDetail />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />

@@ -19,9 +19,9 @@ function writeStore(obj) {
   localStorage.setItem(KEY, JSON.stringify(obj))
 }
 
-export function setRating(id, albumMeta, rating) {
+export function setRating(id, albumMeta, rating, note = '') {
   const store = readStore()
-  store[id] = { album: albumMeta, rating, updatedAt: Date.now() }
+  store[id] = { album: albumMeta, rating, note, updatedAt: Date.now() }
   writeStore(store)
 }
 
