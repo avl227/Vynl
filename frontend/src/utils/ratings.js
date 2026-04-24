@@ -1,24 +1,29 @@
-const KEY = 'vynl_ratings'
+import axios from 'axios'
+
+const API_BASE = 'http://localhost:3000'
 const INITIAL_ELO = 1500
 const K_FACTOR = 64
 
 export function scoreAlbumByRank(position, totalAlbums) {
-  // Convert position (0-indexed) to 0-10 score
-  // position 0 (best) = 10, position totalAlbums-1 (worst) = 0
   if (totalAlbums === 0) return 5
   return Math.max(0, Math.round((1 - position / totalAlbums) * 10))
 }
 
-// Convert Elo rating to 0-10 display score
-export function eloToDisplayScore(elo, allElos) {
-  if (allElos.length === 0) return 5
+export function eloToDisplayScore(elo, allElos = []) {
+  // If no allElos provided, use fixed Elo conversion
+  if (!allElos || allElos.length === 0) {
+    const baseElo = 1500
+    const score = 5 + ((elo - baseElo) / 100) * 2.5
+    return Math.max(0, Math.min(10, score))
+  }
+  
+  // Original logic if allElos is provided
   const sortedElos = allElos.sort((a, b) => b - a)
   let position = sortedElos.findIndex(e => e <= elo)
   if (position === -1) position = sortedElos.length
   return scoreAlbumByRank(position, sortedElos.length)
 }
 
-// Elo calculation functions
 function expectedScore(ratingA, ratingB) {
   return 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400))
 }
@@ -42,90 +47,60 @@ function updateElo(winnerElo, loserElo, isTie = false) {
   return { newWinnerElo, newLoserElo }
 }
 
-function readStore() {
+export async function setRating(userId, albumId, albumMeta, elo = INITIAL_ELO, note = '') {
+  try {    
+    await axios.post(`${API_BASE}/api/ratings`, {
+      userId,
+      albumId,
+      elo,
+      note,
+      album: albumMeta  // send the album metadata
+    })
+    window.dispatchEvent(new CustomEvent('ratingsChanged'))
+  } catch (err) {
+    console.error('Failed to save rating:', err)
+  }
+}
+
+export async function getRating(userId, albumId) {
   try {
-    return JSON.parse(localStorage.getItem(KEY) || '{}')
-  } catch {
-    return {}
+    const res = await axios.get(`${API_BASE}/api/ratings/${userId}`)
+    return res.data.find(r => r.album_id === albumId) || null
+  } catch (err) {
+    console.error('Failed to fetch rating:', err)
+    return null
   }
 }
 
-function writeStore(obj) {
-  localStorage.setItem(KEY, JSON.stringify(obj))
-  // Dispatch custom event to notify components of changes
-  window.dispatchEvent(new CustomEvent('ratingsChanged'))
-}
-
-export function setRating(id, albumMeta, elo = INITIAL_ELO, note = '') {
-  const store = readStore()
-  store[id] = { album: albumMeta, elo, note, updatedAt: Date.now() }
-  writeStore(store)
-}
-
-export function getRating(id) {
-  const store = readStore()
-  const item = store[id]
-  if (!item) return null
-  // Migrate old format to new format
-  if (item.rating && !item.elo) {
-    // Map old scores to Elo
-    const eloMap = { 10: 1600, 7: 1550, 5: 1500, 2: 1400 }
-    item.elo = eloMap[item.rating] || INITIAL_ELO
-    writeStore(store)
-  }
-  return item
-}
-
-export function getAllRatings() {
-  const store = readStore()
-  // Migrate any old format ratings
-  let needsUpdate = false
-  Object.values(store).forEach(item => {
-    if (item.rating && !item.elo) {
-      item.elo = item.rating
-      needsUpdate = true
-    }
-  })
-  if (needsUpdate) writeStore(store)
-  
-  return Object.entries(store)
-    .map(([id, value]) => ({ id, ...value }))
-    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
-}
-
-export function updateRatingElo(id, newElo) {
-  const store = readStore()
-  if (store[id]) {
-    store[id].elo = newElo
-    store[id].updatedAt = Date.now()
-    writeStore(store)
+export async function getAllRatings(userId) {
+  try {
+    const res = await axios.get(`${API_BASE}/api/ratings/${userId}`)
+    return res.data.sort((a, b) => (b.updated_at || 0) - (a.updated_at || 0))
+  } catch (err) {
+    console.error('Failed to fetch ratings:', err)
+    return []
   }
 }
 
-export function getAllElos() {
-  const store = readStore()
-  return Object.values(store).map(item => item.elo || item.rating || INITIAL_ELO)
+export async function getAllElos(userId) {
+  try {
+    const res = await axios.get(`${API_BASE}/api/ratings/${userId}`)
+    return res.data.map(r => r.rating)
+  } catch (err) {
+    console.error('Failed to fetch elos:', err)
+    return []
+  }
 }
 
-export function compareAlbums(winnerId, loserId, isTie = false) {
-  const store = readStore()
-  const winner = store[winnerId]
-  const loser = store[loserId]
-
-  if (!winner || !loser) return
-
-  const { newWinnerElo, newLoserElo } = updateElo(winner.elo, loser.elo, isTie)
-
-  winner.elo = newWinnerElo
-  loser.elo = newLoserElo
-  winner.updatedAt = Date.now()
-  loser.updatedAt = Date.now()
-
-  writeStore(store)
+export async function removeRating(userId, albumId) {
+  try {
+    await axios.delete(`${API_BASE}/api/ratings/${userId}/${albumId}`)
+    window.dispatchEvent(new CustomEvent('ratingsChanged'))
+  } catch (err) {
+    console.error('Failed to delete rating:', err)
+  }
 }
 
-export function removeRating(id) {
-  const store = readStore()
-  delete store[id]
-  writeStore(store)
+export function compareAlbums(winnerElo, loserElo, isTie = false) {
+  return updateElo(winnerElo, loserElo, isTie)
 }

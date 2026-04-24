@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import './AlbumCard.css';
-import { useNavigate } from 'react-router-dom';
-import { getRating, eloToDisplayScore, getAllElos } from '../utils/ratings'
-import Rating from './Rating'
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { getRating, eloToDisplayScore } from '../utils/ratings'
+import './AlbumCard.css'
 
 const AlbumCard = ({ album }) => {
     const navigate = useNavigate();
     const [updateTrigger, setUpdateTrigger] = useState(0)
+    const userId = localStorage.getItem('userId')
+    const [existing, setExisting] = useState(null)
 
     useEffect(() => {
         const handleRatingsChange = () => {
@@ -16,8 +17,19 @@ const AlbumCard = ({ album }) => {
         return () => window.removeEventListener('ratingsChanged', handleRatingsChange)
     }, [])
 
-    const existing = getRating(String(album.id))
-    const allElos = getAllElos()
+    useEffect(() => {
+        if (userId) {
+            getRating(userId, album.id)
+                .then(rating => {
+                    console.log('Got rating:', rating)
+                    setExisting(rating)
+                })
+                .catch(err => {
+                    console.error('Failed to fetch rating:', err)
+                    setExisting(null)
+                })
+        }
+    }, [userId, updateTrigger, album.id])
 
     const handleRateClick = (e) => {
         e.preventDefault();
@@ -30,8 +42,7 @@ const AlbumCard = ({ album }) => {
     };
 
     const hasRating = Boolean(existing)
-
-    const displayScore = existing ? eloToDisplayScore(existing.elo, allElos).toFixed(1) : null
+    const displayScore = existing?.rating ? eloToDisplayScore(existing.rating).toFixed(1) : null
 
     return (
         <div className="album-card" onClick={handleCardClick}>
@@ -39,12 +50,12 @@ const AlbumCard = ({ album }) => {
             <div className="album-info">
                 <h3 className="album-title">{album.title}</h3>
                 <p className="album-artist">{album.artist}</p>
-                                <div style={{display:'flex',gap:8,alignItems:'center'}}>
-                                    <button className="rate-button" onClick={handleRateClick}>
-                                        {hasRating ? 'Edit Rating' : 'Rate Album'}
-                                    </button>
-                                    {hasRating && <span style={{fontFamily:"DM Mono, monospace",fontSize:12}}>{displayScore}</span>}
-                                </div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <button className="rate-button" onClick={handleRateClick}>
+                        {hasRating ? 'Edit Rating' : 'Rate Album'}
+                    </button>
+                    {hasRating && <span style={{ fontFamily: "DM Mono, monospace", fontSize: 12 }}>{displayScore}</span>}
+                </div>
             </div>
         </div>
     );

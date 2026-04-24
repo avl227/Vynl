@@ -10,9 +10,12 @@ import './AlbumDetail.css'
 export default function AlbumDetail() {
   const { id } = useParams()
   const location = useLocation()
+  const userId = localStorage.getItem('userId')
   const { data: album, isLoading } = useQuery(['album', id], () => lookupAlbum(id), { enabled: Boolean(id) })
   const [ratingInProgress, setRatingInProgress] = useState(false)
   const [ratings, setRatings] = useState(null)
+  const [existing, setExisting] = useState(null)
+  const [allRatings, setAllRatings] = useState([])
 
   useEffect(() => {
     if (location.state?.startRating) {
@@ -20,20 +23,23 @@ export default function AlbumDetail() {
     }
   }, [location.state])
 
+  useEffect(() => {
+    if (userId) {
+      getRating(userId, album?.id).then(setExisting)
+      getAllRatings(userId).then(setAllRatings)
+    }
+  }, [userId, album?.id])
+
   if (isLoading) return <main className="album-detail"><div className="loading">Loading…</div></main>
   if (!album) return <main className="album-detail"><Link to="/" className="back-link">← Back</Link><p>Album not found</p></main>
 
-  const existing = getRating(album.id)
-  const allRatings = getAllRatings()
-  const existingRatings = allRatings.filter(r => r.id !== String(album.id))
-
-  const handleRatingComplete = (elo, note) => {
-    setRating(album.id, { id: album.id, title: album.title, artist: album.artist, artworkUrl: album.artworkUrl }, elo, note)
+  const handleRatingComplete = async (elo, note) => {
+    await setRating(userId, album.id, { id: album.id, title: album.title, artist: album.artist, artworkUrl: album.artworkUrl }, elo, note)
     setRatingInProgress(false)
     setRatings({ myRating: elo, note })
   }
 
-  const displayRating = ratings?.myRating ?? existing?.elo
+  const displayRating = ratings?.myRating ?? existing?.rating
   const displayNote = ratings?.note ?? existing?.note
 
   return (
@@ -48,6 +54,7 @@ export default function AlbumDetail() {
               album={album}
               existingRatings={allRatings}
               onComplete={handleRatingComplete}
+              userId={userId}
             />
           </div>
         </div>

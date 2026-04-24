@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { eloToDisplayScore, getAllElos } from '../utils/ratings'
 
-export default function Rating({ value }) {
+export default function Rating({ value, userId }) {
   const [updateTrigger, setUpdateTrigger] = useState(0)
+  const [allElos, setAllElos] = useState([])
 
   useEffect(() => {
     const handleRatingsChange = () => {
@@ -12,16 +13,15 @@ export default function Rating({ value }) {
     return () => window.removeEventListener('ratingsChanged', handleRatingsChange)
   }, [])
 
-  if (value == null) return <span style={{color:'#888'}}>—</span>
+  useEffect(() => {
+    if (userId) {
+      getAllElos(userId).then(elos => setAllElos(elos))
+    }
+  }, [userId, updateTrigger])
 
-  let displayScore
-  if (typeof value === 'number') {
-    // Assume it's Elo rating, convert to display score
-    const allElos = getAllElos()
-    displayScore = eloToDisplayScore(value, allElos).toFixed(1)
-  } else {
-    displayScore = value
-  }
+  if (value == null) return <span style={{color:'#888'}}>—</span>
+  
+  const displayScore = eloToDisplayScore(value, allElos).toFixed(1)
 
   return <strong style={{color:'#0a74da'}}>Score: {displayScore}</strong>
 }

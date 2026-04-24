@@ -4,12 +4,13 @@ import { getAllRatings, removeRating, eloToDisplayScore, getAllElos } from '../u
 import profile from '../data/vynl-profile.png'
 import './Profile.css'
 
-export default function Profile(){
+export default function Profile() {
   const navigate = useNavigate()
+  const userId = localStorage.getItem('userId')
   const [topRatedView, setTopRatedView] = useState(false)
   const [updateTrigger, setUpdateTrigger] = useState(0)
-  const ratings = getAllRatings()
-  const allElos = getAllElos()
+  const [ratings, setRatings] = useState([])
+  const [allElos, setAllElos] = useState([])
 
   useEffect(() => {
     const handleRatingsChange = () => {
@@ -18,6 +19,18 @@ export default function Profile(){
     window.addEventListener('ratingsChanged', handleRatingsChange)
     return () => window.removeEventListener('ratingsChanged', handleRatingsChange)
   }, [])
+
+  useEffect(() => {
+    if (userId) {
+      getAllRatings(userId).then(setRatings)
+      getAllElos(userId).then(setAllElos)
+    }
+  }, [userId, updateTrigger])
+
+  const handleRemove = async (albumId) => {
+    await removeRating(userId, albumId)
+    window.location.reload()
+  }
 
   const sortedByRating = useMemo(() => {
     return [...ratings].sort((a, b) => {
@@ -28,13 +41,8 @@ export default function Profile(){
 
   const displayedRatings = topRatedView ? sortedByRating : ratings
 
-  const handleRemove = (id) => {
-    removeRating(id)
-    window.location.reload()
-  }
-
-  const getDisplayScore = (elo) => {
-    return eloToDisplayScore(elo, allElos).toFixed(1)
+  const getDisplayScore = (rating) => {
+    return eloToDisplayScore(rating, allElos).toFixed(1)
   }
 
   return (
@@ -63,7 +71,7 @@ export default function Profile(){
         {ratings.length === 0 && <p className="empty">You haven't rated any albums yet.</p>}
 
         {displayedRatings.map((r, index) => (
-          <article key={r.id} className="rating-item" onClick={() => navigate(`/album/${r.id}`)}>
+          <article key={r.id} className="rating-item" onClick={() => navigate(`/album/${r.album_id}`)}>
             <img src={r.album.artworkUrl} alt={r.album.title} className="rating-art" />
             <div className="rating-body">
               {topRatedView ? (
@@ -71,19 +79,19 @@ export default function Profile(){
                   <p className="ranked-number">#{index + 1}</p>
                   <p className="rating-title">{r.album.title}</p>
                   <p className="rating-artist">{r.album.artist}</p>
-                  <p className="rating-score">Score: {getDisplayScore(r.elo)}</p>
+                  <p className="rating-score">Score: {getDisplayScore(r.rating)}</p>
                 </>
               ) : (
                 <>
                   <p className="activity-text">You ranked {r.album.title}</p>
-                  <p className="activity-date">{new Date(r.updatedAt).toLocaleDateString(undefined, {year:'numeric',month:'short',day:'numeric'})}</p>
-                  <p className="rating-score">Score: {getDisplayScore(r.elo)}</p>
+                  <p className="activity-date">{new Date(r.updatedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                  <p className="rating-score">Score: {getDisplayScore(r.rating)}</p>
                   {r.note && <p className="rating-note">{r.note}</p>}
                 </>
               )}
             </div>
             <div className="rating-actions">
-              <button className="remove-btn" onClick={(e) => { e.stopPropagation(); handleRemove(r.id) }}>Remove</button>
+              <button className="remove-btn" onClick={(e) => { e.stopPropagation(); handleRemove(r.album_id) }}>Remove</button>
             </div>
           </article>
         ))}

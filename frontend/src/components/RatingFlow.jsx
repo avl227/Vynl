@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
 import ComparisonFlow from './ComparisonFlow'
+import { setRating } from '../utils/ratings'
 import './RatingFlow.css'
 
-export default function RatingFlow({ album, existingRatings, onComplete }) {
+export default function RatingFlow({ album, existingRatings, onComplete, userId }) {
   const [sentiment, setSentiment] = useState(null)
   const [note, setNote] = useState('')
   const [inComparison, setInComparison] = useState(false)
@@ -17,7 +18,8 @@ export default function RatingFlow({ album, existingRatings, onComplete }) {
     setSentiment(choice)
   }
 
-  const handleComparisonComplete = (finalElo) => {
+  const handleComparisonComplete = async (finalElo) => {
+    await setRating(userId, album.id, album, finalElo, note)
     onComplete(finalElo, note)
   }
 
@@ -73,9 +75,8 @@ export default function RatingFlow({ album, existingRatings, onComplete }) {
           <button
             onClick={() => {
               if (existingRatings.length === 0) {
-                // First album, use initial Elo based on sentiment
                 const sentimentElos = { liked: 1600, fine: 1500, disliked: 1400 }
-                onComplete(sentimentElos[sentiment], note)
+                handleComparisonComplete(sentimentElos[sentiment])
               } else {
                 setInComparison(true)
               }

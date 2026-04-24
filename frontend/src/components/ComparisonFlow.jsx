@@ -1,39 +1,31 @@
 import React, { useState, useMemo } from 'react'
-import { compareAlbums, getAllRatings } from '../utils/ratings'
+import { compareAlbums, setRating, getAllRatings } from '../utils/ratings'
 
-export default function ComparisonFlow({ newAlbum, existingAlbums, onComplete, sentiment }) {
+export default function ComparisonFlow({ newAlbum, existingAlbums, onComplete, sentiment, userId }) {
   const [comparisons, setComparisons] = useState([])
   const [currentComparison, setCurrentComparison] = useState(0)
   const [isComplete, setIsComplete] = useState(false)
 
-  // Select 3 albums at different rating levels for comparison
   const selectedAlbums = useMemo(() => {
     if (existingAlbums.length === 0) return []
-    const sorted = [...existingAlbums].sort((a, b) => b.elo - a.elo)
+    const sorted = [...existingAlbums].sort((a, b) => b.rating - a.rating)
     const len = sorted.length
     if (len <= 3) return sorted
-    // Select top, middle, bottom
-    return [sorted[0], sorted[Math.floor(len/2)], sorted[len-1]]
+    return [sorted[0], sorted[Math.floor(len / 2)], sorted[len - 1]]
   }, [existingAlbums])
 
-  const handleChoice = (choice, isTie = false) => {
+  const handleChoice = async (choice, isTie = false) => {
     const currentAlbum = selectedAlbums[currentComparison]
     if (!currentAlbum) return
 
-    let winnerId, loserId
-    if (choice === 'new') {
-      winnerId = String(newAlbum.collectionId)
-      loserId = currentAlbum.id
-    } else if (choice === 'existing') {
-      winnerId = currentAlbum.id
-      loserId = String(newAlbum.collectionId)
-    } else if (isTie) {
-      // For tie, we compare new vs existing as tie
-      compareAlbums(String(newAlbum.collectionId), currentAlbum.id, true)
-    }
+    let newAlbumElo = newAlbum.currentElo || 1500
 
-    if (!isTie) {
-      compareAlbums(winnerId, loserId, false)
+    if (choice === 'new') {
+      const { newWinnerElo } = compareAlbums(newAlbumElo, currentAlbum.rating, isTie)
+      newAlbum.currentElo = newWinnerElo
+    } else if (choice === 'existing') {
+      const { newLoserElo } = compareAlbums(newAlbumElo, currentAlbum.rating, isTie)
+      newAlbum.currentElo = newLoserElo
     }
 
     const newComparisons = [...comparisons, { choice, isTie, opponent: currentAlbum }]
@@ -43,16 +35,11 @@ export default function ComparisonFlow({ newAlbum, existingAlbums, onComplete, s
       setCurrentComparison(currentComparison + 1)
     } else {
       setIsComplete(true)
-      // Get the final Elo for the new album
-      const allRatings = getAllRatings()
-      const newAlbumRating = allRatings.find(r => r.id === newAlbum.collectionId.toString())
-      const finalElo = newAlbumRating ? newAlbumRating.elo : 1500
-      onComplete(finalElo)
+      onComplete(newAlbum.currentElo || 1500)
     }
   }
 
   if (existingAlbums.length === 0) {
-    // No existing albums, just complete with initial rating
     onComplete(1500)
     return null
   }
@@ -88,7 +75,6 @@ export default function ComparisonFlow({ newAlbum, existingAlbums, onComplete, s
           marginTop: 16,
         }}
       >
-        {/* New Album */}
         <button
           onClick={() => handleChoice('new')}
           style={{
@@ -115,7 +101,6 @@ export default function ComparisonFlow({ newAlbum, existingAlbums, onComplete, s
           </p>
         </button>
 
-        {/* Comparison Album */}
         <button
           onClick={() => handleChoice('existing')}
           style={{

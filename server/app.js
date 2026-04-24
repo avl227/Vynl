@@ -2,11 +2,23 @@ import express from 'express'
 import cors from 'cors'
 import 'dotenv/config'
 import bcrypt from 'bcrypt'
+import pg from 'pg'
 
 const app = express()
 app.set('port', process.env.PORT || 3000)
 app.use(express.json())
 app.use(cors())
+
+const { Pool } = pg
+const pool = new Pool({
+  host: process.env.POSTGRES_HOST,
+  port: process.env.POSTGRES_PORT,
+  database: process.env.POSTGRES_DBNAME,
+  user: process.env.POSTGRES_USERNAME,
+  password: process.env.POSTGRES_PASSWORD
+})
+
+const query = (text, params) => pool.query(text, params)
 
 // Health check
 app.get('/up', (_req, res) => res.json({ status: 'up' }))
@@ -46,38 +58,49 @@ app.post('/api/auth/login', async (req, res) => {
 
 // Rating endpoints
 app.post('/api/ratings', async (req, res) => {
-  // Save rating to DB
+  // Save rating to db
   try {
-    const { userId, albumId, elo, note } = req.body
+    const { userId, albumId, elo, note, album } = req.body  // Accept album data
+    const albumJson = JSON.stringify(album)  // Store as JSON
     const result = await query(
-      'INSERT INTO ratings (user_id, album_id, rating, note) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id, album_id) DO UPDATE SET rating = $3, note = $4 RETURNING *',
-      [userId, albumId, elo, note]
+      'INSERT INTO ratings (user_id, album_id, rating, note, album_data) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (user_id, album_id) DO UPDATE SET rating = $3, note = $4, album_data = $5, updated_at = CURRENT_TIMESTAMP RETURNING *',
+      [userId, albumId, elo, note, albumJson]
     )
     res.json(result.rows[0])
   } catch (err) {
+    console.error('Rating error:', err.message)
     res.status(500).json({ error: 'Failed to save rating' })
   }
 })
 
 app.get('/api/ratings/:userId', async (req, res) => {
-  // Fetch existing rating
+  // Fetch all the user ratings
   try {
     const { userId } = req.params
     const result = await query(
-      'SELECT r.id, r.album_id, r.rating, r.note, r.updated_at FROM ratings r WHERE r.user_id = $1 ORDER BY r.rating DESC',
+      'SELECT id, album_id, rating, note, album_data, updated_at FROM ratings WHERE user_id = $1 ORDER BY rating DESC',
       [userId]
     )
-    res.json(result.rows)
+    const ratings = result.rows.map(r => ({
+      id: r.id,
+      album_id: r.album_id,
+      rating: r.rating,
+      note: r.note,
+      album: r.album_data || {},
+      updatedAt: r.updated_at  
+    }))
+    res.json(ratings)
   } catch (err) {
+    console.error('Fetch error:', err)
     res.status(500).json({ error: 'Failed to fetch ratings' })
   }
 })
 
-app.delete('/api/ratings/:albumId', async (req, res) => {
-  // Delete existing rating
+app.delete('/api/ratings/:userId/:albumId', async (req, res) => {
+  // Delete an existing rating
   try {
-    const { albumId } = req.params
-    await query('DELETE FROM ratings WHERE album_id = $1', [albumId])
+    const { userId, albumId } = req.params
+    await query('DELETE FROM ratings WHERE user_id = $1 AND album_id = $2', [userId, albumId])
     res.json({ success: true })
   } catch (err) {
     res.status(500).json({ error: 'Failed to delete rating' })
