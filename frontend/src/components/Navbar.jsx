@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import SearchBar from './SearchBar'
+import profile from '../data/vynl-profile.png'
 import './Navbar.css'
 
 export default function Navbar({ searchValue, onSearchChange }) {
@@ -30,7 +31,7 @@ export default function Navbar({ searchValue, onSearchChange }) {
 
       <Link to="/profile" className="navbar-panel navbar-profile">
         <img
-          src="https://via.placeholder.com/40"
+          src={profile}
           alt="Profile"
           className="profile-image"
         />

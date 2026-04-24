@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getAllRatings, removeRating, eloToDisplayScore, getAllElos } from '../utils/ratings'
+import profile from '../data/vynl-profile.png'
 import './Profile.css'
 
 export default function Profile(){
@@ -39,7 +40,7 @@ export default function Profile(){
   return (
     <main className="profile-page">
       <header className="profile-header">
-        <img className="profile-photo" src="https://via.placeholder.com/120?text=Photo" alt="Profile" />
+        <img className="profile-photo" src={profile} alt="Profile" />
         <div className="profile-meta">
           <h2>demo_user</h2>
           <p className="profile-bio">Vinyl collector. Rating everything I spin.</p>

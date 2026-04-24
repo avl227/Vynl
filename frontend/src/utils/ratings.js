@@ -13,7 +13,7 @@ export function scoreAlbumByRank(position, totalAlbums) {
 export function eloToDisplayScore(elo, allElos) {
   if (allElos.length === 0) return 5
   const sortedElos = allElos.sort((a, b) => b - a)
-  const position = sortedElos.findIndex(e => e <= elo)
+  let position = sortedElos.findIndex(e => e <= elo)
   if (position === -1) position = sortedElos.length
   return scoreAlbumByRank(position, sortedElos.length)
 }

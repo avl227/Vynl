@@ -25,10 +25,21 @@ export default function Discover({ searchValue }) {
     } else {
       setIsSearching(false)
       setSearchResults([])
+      // Fetch popular albums from iTunes instead of mock data
+      setIsLoading(true)
+      searchAlbums('popular')
+        .then(results => {
+          setSearchResults(results.slice(0, 6)) // Show 6 random albums
+          setIsLoading(false)
+        })
+        .catch(err => {
+          console.error('Error fetching popular albums:', err)
+          setIsLoading(false)
+        })
     }
   }, [searchValue])
 
-  const displayAlbums = isSearching ? searchResults : albums
+  const displayAlbums = searchResults
 
   return (
     <div className="discover-page">
