@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getRating, eloToDisplayScore } from '../utils/ratings'
+import { getRating } from '../utils/ratings'
 import './AlbumCard.css'
 
 const AlbumCard = ({ album }) => {
@@ -42,7 +42,7 @@ const AlbumCard = ({ album }) => {
     };
 
     const hasRating = Boolean(existing)
-    const displayScore = existing?.rating ? eloToDisplayScore(existing.rating).toFixed(1) : null
+    const displayScore = existing?.score ? existing.score.toFixed(1) : null
 
     return (
         <div className="album-card" onClick={handleCardClick}>

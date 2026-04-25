@@ -33,13 +33,14 @@ export default function AlbumDetail() {
   if (isLoading) return <main className="album-detail"><div className="loading">Loading…</div></main>
   if (!album) return <main className="album-detail"><Link to="/" className="back-link">← Back</Link><p>Album not found</p></main>
 
-  const handleRatingComplete = async (elo, note) => {
-    await setRating(userId, album.id, { id: album.id, title: album.title, artist: album.artist, artworkUrl: album.artworkUrl }, elo, note)
+  const handleRatingComplete = async (score, note) => {
+    const category = score >= 6.7 ? 'liked' : score >= 3.7 ? 'ok' : 'disliked'
+    await setRating(userId, album.id, { id: album.id, title: album.title, artist: album.artist, artworkUrl: album.artworkUrl }, score, note)
     setRatingInProgress(false)
-    setRatings({ myRating: elo, note })
+    setRatings({ myRating: score, note })
   }
 
-  const displayRating = ratings?.myRating ?? existing?.rating
+  const displayRating = ratings?.myRating ?? existing?.score
   const displayNote = ratings?.note ?? existing?.note
 
   return (

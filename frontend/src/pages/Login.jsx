@@ -11,16 +11,15 @@ export default function Login() {
   const submit = async (e) => {
     e.preventDefault()
     try {
-      const res = await axios.post('http://localhost:3000/api/auth/signup', {
-        username,
+      const res = await axios.post('http://localhost:3000/api/auth/login', {
         email,
         password
       })
       localStorage.setItem('userId', res.data.id)
-      window.dispatchEvent(new Event('userLoggedIn'))  // ← Add this
-      nav('/')  // ← Change to home, not profile
+      window.dispatchEvent(new Event('userLoggedIn'))
+      nav('/')
     } catch (err) {
-      setError('Signup failed')
+      setError('Invalid credentials')
       console.error(err)
     }
   }

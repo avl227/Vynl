@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { getAllRatings, removeRating, eloToDisplayScore, getAllElos } from '../utils/ratings'
+import { getAllRatings, removeRating, getDisplayScore } from '../utils/ratings'
 import profile from '../data/vynl-profile.png'
 import './Profile.css'
 
@@ -10,7 +10,7 @@ export default function Profile() {
   const [topRatedView, setTopRatedView] = useState(false)
   const [updateTrigger, setUpdateTrigger] = useState(0)
   const [ratings, setRatings] = useState([])
-  const [allElos, setAllElos] = useState([])
+  const [user, setUser] = useState(null)
 
   useEffect(() => {
     const handleRatingsChange = () => {
@@ -23,7 +23,11 @@ export default function Profile() {
   useEffect(() => {
     if (userId) {
       getAllRatings(userId).then(setRatings)
-      getAllElos(userId).then(setAllElos)
+      // Fetch user data
+      fetch(`http://localhost:3000/api/users/${userId}`)
+        .then(res => res.json())
+        .then(data => setUser(data))
+        .catch(err => console.error('Failed to fetch user:', err))
     }
   }, [userId, updateTrigger])
 
@@ -34,15 +38,15 @@ export default function Profile() {
 
   const sortedByRating = useMemo(() => {
     return [...ratings].sort((a, b) => {
-      if (b.elo !== a.elo) return b.elo - a.elo
+      if (b.score !== a.score) return b.score - a.score
       return (b.updatedAt || 0) - (a.updatedAt || 0)
     })
   }, [ratings])
 
   const displayedRatings = topRatedView ? sortedByRating : ratings
 
-  const getDisplayScore = (rating) => {
-    return eloToDisplayScore(rating, allElos).toFixed(1)
+  const getScoreDisplay = (rating) => {
+    return (rating.score || 0).toFixed(1)
   }
 
   return (
@@ -50,12 +54,12 @@ export default function Profile() {
       <header className="profile-header">
         <img className="profile-photo" src={profile} alt="Profile" />
         <div className="profile-meta">
-          <h2>demo_user</h2>
+          <h2>{user?.username || 'Loading...'}</h2>
           <p className="profile-bio">Vinyl collector. Rating everything I spin.</p>
           <div className="profile-stats">
             <div><strong>{ratings.length}</strong><div>Ratings</div></div>
-            <div><strong>123</strong><div>Followers</div></div>
-            <div><strong>89</strong><div>Following</div></div>
+            <div><strong>0</strong><div>Followers</div></div>
+            <div><strong>0</strong><div>Following</div></div>
           </div>
         </div>
       </header>
@@ -63,6 +67,16 @@ export default function Profile() {
       <div className="profile-actions">
         <button className="rated-albums-button" onClick={() => setTopRatedView(!topRatedView)}>
           {topRatedView ? 'Recent Activity' : `Rated Albums [${ratings.length}]`}
+        </button>
+        <button 
+          className="logout-button" 
+          onClick={() => {
+            localStorage.removeItem('userId');
+            window.location.href = '/';
+          }}
+          style={{ marginLeft: 8, padding: '8px 16px', background: '#f0f0f0', border: '1px solid #ccc', cursor: 'pointer' }}
+        >
+          Log out
         </button>
       </div>
 
@@ -79,13 +93,13 @@ export default function Profile() {
                   <p className="ranked-number">#{index + 1}</p>
                   <p className="rating-title">{r.album.title}</p>
                   <p className="rating-artist">{r.album.artist}</p>
-                  <p className="rating-score">Score: {getDisplayScore(r.rating)}</p>
+                  <p className="rating-score">Score: {getScoreDisplay(r)}</p>
                 </>
               ) : (
                 <>
                   <p className="activity-text">You ranked {r.album.title}</p>
                   <p className="activity-date">{new Date(r.updatedAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</p>
-                  <p className="rating-score">Score: {getDisplayScore(r.rating)}</p>
+                  <p className="rating-score">Score: {getScoreDisplay(r)}</p>
                   {r.note && <p className="rating-note">{r.note}</p>}
                 </>
               )}

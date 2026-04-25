@@ -1,16 +1,19 @@
 import React, { useState, useMemo } from 'react'
-import { compareAlbums, setRating, getAllRatings } from '../utils/ratings'
+import { compareAlbums, handleTie, CATEGORIES, setRating } from '../utils/ratings'
 
 export default function ComparisonFlow({ newAlbum, existingAlbums, onComplete, sentiment, userId }) {
   const [comparisons, setComparisons] = useState([])
   const [currentComparison, setCurrentComparison] = useState(0)
   const [isComplete, setIsComplete] = useState(false)
+  const [newAlbumScore, setNewAlbumScore] = useState(CATEGORIES[sentiment]?.initial || 10.0)
 
+  // Select 3 albums at different score levels for comparison (binary search style)
   const selectedAlbums = useMemo(() => {
     if (existingAlbums.length === 0) return []
-    const sorted = [...existingAlbums].sort((a, b) => b.rating - a.rating)
+    const sorted = [...existingAlbums].sort((a, b) => (b.score || 0) - (a.score || 0))
     const len = sorted.length
     if (len <= 3) return sorted
+    // Select top, middle, bottom for binary search
     return [sorted[0], sorted[Math.floor(len / 2)], sorted[len - 1]]
   }, [existingAlbums])
 
@@ -18,14 +21,28 @@ export default function ComparisonFlow({ newAlbum, existingAlbums, onComplete, s
     const currentAlbum = selectedAlbums[currentComparison]
     if (!currentAlbum) return
 
-    let newAlbumElo = newAlbum.currentElo || 1500
+    const currentScore = currentAlbum.score || 0
+    let updatedScores
 
-    if (choice === 'new') {
-      const { newWinnerElo } = compareAlbums(newAlbumElo, currentAlbum.rating, isTie)
-      newAlbum.currentElo = newWinnerElo
-    } else if (choice === 'existing') {
-      const { newLoserElo } = compareAlbums(newAlbumElo, currentAlbum.rating, isTie)
-      newAlbum.currentElo = newLoserElo
+    if (isTie) {
+      updatedScores = handleTie(newAlbum.id, newAlbumScore, currentAlbum.album_id, currentScore)
+    } else if (choice === 'new') {
+      // New album wins - it should be >= the other
+      updatedScores = compareAlbums(newAlbum.id, newAlbumScore, currentAlbum.album_id, currentScore)
+    } else {
+      // Existing album wins - it should be >= the new one
+      updatedScores = compareAlbums(currentAlbum.album_id, currentScore, newAlbum.id, newAlbumScore)
+    }
+
+    // Update new album score
+    if (updatedScores[newAlbum.id] !== undefined) {
+      setNewAlbumScore(updatedScores[newAlbum.id])
+    }
+
+    // Also update the existing album's score in the database
+    if (updatedScores[currentAlbum.album_id] !== undefined) {
+      const existingAlbum = currentAlbum.album || {}
+      await setRating(userId, currentAlbum.album_id, existingAlbum, updatedScores[currentAlbum.album_id], currentAlbum.note)
     }
 
     const newComparisons = [...comparisons, { choice, isTie, opponent: currentAlbum }]
@@ -35,12 +52,14 @@ export default function ComparisonFlow({ newAlbum, existingAlbums, onComplete, s
       setCurrentComparison(currentComparison + 1)
     } else {
       setIsComplete(true)
-      onComplete(newAlbum.currentElo || 1500)
+      // Final score is already set in newAlbumScore
+      onComplete(newAlbumScore)
     }
   }
 
   if (existingAlbums.length === 0) {
-    onComplete(1500)
+    // No existing albums in this category, use initial score
+    onComplete(CATEGORIES[sentiment]?.initial || 10.0)
     return null
   }
 
@@ -49,9 +68,9 @@ export default function ComparisonFlow({ newAlbum, existingAlbums, onComplete, s
       <section style={{ marginTop: 20, padding: 12, background: '#f9f9f9', border: '1px solid #000' }}>
         <h3>All set! 👌</h3>
         <p>
-          Based on your comparisons, <strong>{newAlbum.title}</strong> has been rated.
+          Based on your comparisons, <strong>{newAlbum.title}</strong> has been rated <strong>{newAlbumScore.toFixed(1)}</strong>.
         </p>
-        <button onClick={() => onComplete()} style={{ marginTop: 10, background: '#ff8c42', border: '1px solid #000', padding: '8px 16px' }}>
+        <button onClick={() => onComplete(newAlbumScore)} style={{ marginTop: 10, background: '#ff8c42', border: '1px solid #000', padding: '8px 16px' }}>
           Done
         </button>
       </section>
@@ -89,15 +108,18 @@ export default function ComparisonFlow({ newAlbum, existingAlbums, onComplete, s
           onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
         >
           <img
-            src={newAlbum.artworkUrl}
-            alt={newAlbum.title}
+            src={newAlbum.artworkUrl || newAlbum.album?.artworkUrl}
+            alt={newAlbum.title || newAlbum.album?.title}
             style={{ width: 100, height: 100 }}
           />
           <p style={{ margin: '8px 0 0 0', fontSize: '0.9rem', fontWeight: 'bold' }}>
-            {newAlbum.title}
+            {newAlbum.title || newAlbum.album?.title}
           </p>
           <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#666' }}>
-            {newAlbum.artist}
+            {newAlbum.artist || newAlbum.album?.artist}
+          </p>
+          <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#0a74da' }}>
+            Score: {newAlbumScore.toFixed(1)}
           </p>
         </button>
 
@@ -115,15 +137,18 @@ export default function ComparisonFlow({ newAlbum, existingAlbums, onComplete, s
           onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
         >
           <img
-            src={currentAlbum.album.artworkUrl}
-            alt={currentAlbum.album.title}
+            src={currentAlbum.album?.artworkUrl}
+            alt={currentAlbum.album?.title}
             style={{ width: 100, height: 100 }}
           />
           <p style={{ margin: '8px 0 0 0', fontSize: '0.9rem', fontWeight: 'bold' }}>
-            {currentAlbum.album.title}
+            {currentAlbum.album?.title}
           </p>
           <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#666' }}>
-            {currentAlbum.album.artist}
+            {currentAlbum.album?.artist}
+          </p>
+          <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#0a74da' }}>
+            Score: {currentAlbum.score?.toFixed(1)}
           </p>
         </button>
       </div>

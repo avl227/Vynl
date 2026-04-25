@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { eloToDisplayScore, getAllElos } from '../utils/ratings'
+import { getAllRatings, getDisplayScore } from '../utils/ratings'
 
 export default function Rating({ value, userId }) {
   const [updateTrigger, setUpdateTrigger] = useState(0)
-  const [allElos, setAllElos] = useState([])
+  const [allScores, setAllScores] = useState([])
 
   useEffect(() => {
     const handleRatingsChange = () => {
@@ -15,13 +15,14 @@ export default function Rating({ value, userId }) {
 
   useEffect(() => {
     if (userId) {
-      getAllElos(userId).then(elos => setAllElos(elos))
+      getAllRatings(userId).then(ratings => setAllScores(ratings.map(r => r.score)))
     }
   }, [userId, updateTrigger])
 
   if (value == null) return <span style={{color:'#888'}}>—</span>
   
-  const displayScore = eloToDisplayScore(value, allElos).toFixed(1)
+  // Use the score directly or calculate from rankings
+  const displayScore = value.toFixed(1)
 
   return <strong style={{color:'#0a74da'}}>Score: {displayScore}</strong>
 }

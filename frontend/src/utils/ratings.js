@@ -1,60 +1,133 @@
 import axios from 'axios'
 
 const API_BASE = 'http://localhost:3000'
-const INITIAL_ELO = 1500
-const K_FACTOR = 64
 
-export function scoreAlbumByRank(position, totalAlbums) {
-  if (totalAlbums === 0) return 5
-  return Math.max(0, Math.round((1 - position / totalAlbums) * 10))
+// Rating categories with their score ranges
+export const CATEGORIES = {
+  liked: { label: 'I liked it', min: 6.7, max: 10.0, initial: 10.0 },
+  ok: { label: 'It was ok', min: 3.7, max: 6.6, initial: 6.6 },
+  disliked: { label: "I didn't like it", min: 0.0, max: 3.6, initial: 3.6 }
 }
 
-export function eloToDisplayScore(elo, allElos = []) {
-  // If no allElos provided, use fixed Elo conversion
-  if (!allElos || allElos.length === 0) {
-    const baseElo = 1500
-    const score = 5 + ((elo - baseElo) / 100) * 2.5
-    return Math.max(0, Math.min(10, score))
+// Get category from score
+export function getCategoryFromScore(score) {
+  if (score >= CATEGORIES.liked.min) return 'liked'
+  if (score >= CATEGORIES.ok.min) return 'ok'
+  return 'disliked'
+}
+
+// Convert rank position to score within a category using linear interpolation
+function rankToScore(position, total, category) {
+  const { min, max } = CATEGORIES[category]
+  if (total <= 1) return max // Top position gets max score
+  
+  // Linear interpolation: position 0 = max, position total-1 = min
+  const normalizedPosition = position / (total - 1)
+  return max - normalizedPosition * (max - min)
+}
+
+// Get display score from stored rating (0-10 scale)
+export function getDisplayScore(rating) {
+  return rating?.score ?? 0
+}
+
+// Binary search insertion to find correct position in sorted list
+function findInsertPosition(newScore, sortedList, category) {
+  let low = 0
+  let high = sortedList.length
+  
+  while (low < high) {
+    const mid = Math.floor((low + high) / 2)
+    if (sortedList[mid].score >= newScore) {
+      low = mid + 1
+    } else {
+      high = mid
+    }
   }
   
-  // Original logic if allElos is provided
-  const sortedElos = allElos.sort((a, b) => b - a)
-  let position = sortedElos.findIndex(e => e <= elo)
-  if (position === -1) position = sortedElos.length
-  return scoreAlbumByRank(position, sortedElos.length)
+  return low
 }
 
-function expectedScore(ratingA, ratingB) {
-  return 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400))
-}
-
-function updateElo(winnerElo, loserElo, isTie = false) {
-  const expectedWinner = expectedScore(winnerElo, loserElo)
-  const expectedLoser = 1 - expectedWinner
-
-  let scoreWinner, scoreLoser
-  if (isTie) {
-    scoreWinner = 0.5
-    scoreLoser = 0.5
-  } else {
-    scoreWinner = 1
-    scoreLoser = 0
+// Compare two albums using binary search (Beli-style)
+// Returns the new scores after comparison
+export function compareAlbums(winnerId, winnerScore, loserId, loserScore) {
+  const winnerCategory = getCategoryFromScore(winnerScore)
+  const loserCategory = getCategoryFromScore(loserScore)
+  
+  // If different categories, no change needed (already separated)
+  if (winnerCategory !== loserCategory) {
+    return { [winnerId]: winnerScore, [loserId]: loserScore }
   }
-
-  const newWinnerElo = winnerElo + K_FACTOR * (scoreWinner - expectedWinner)
-  const newLoserElo = loserElo + K_FACTOR * (scoreLoser - expectedLoser)
-
-  return { newWinnerElo, newLoserElo }
+  
+  const category = winnerCategory
+  const { min, max } = CATEGORIES[category]
+  
+  // Calculate new scores - winner should be higher than loser
+  // Use binary search style: place winner relative to loser
+  const range = max - min
+  const position = (winnerScore - min) / range  // 0 to 1
+  
+  // If winner already higher, increase gap
+  // If winner lower, move winner above loser
+  let newWinnerScore, newLoserScore
+  
+  if (winnerScore > loserScore) {
+    // Winner is already higher - spread them apart more
+    const gap = winnerScore - loserScore
+    const adjustment = Math.max(gap * 0.2, range * 0.05) // At least 5% of range
+    newWinnerScore = Math.min(max, winnerScore + adjustment)
+    newLoserScore = Math.max(min, loserScore - adjustment)
+  } else if (winnerScore < loserScore) {
+    // Winner is lower - move winner above loser
+    // Place winner slightly above loser
+    newWinnerScore = Math.min(max, loserScore + range * 0.05)
+    newLoserScore = Math.max(min, loserScore)
+  } else {
+    // Same score - give winner a small boost
+    newWinnerScore = Math.min(max, winnerScore + range * 0.03)
+    newLoserScore = Math.max(min, loserScore - range * 0.03)
+  }
+  
+  // Ensure winner >= loser
+  if (newWinnerScore < newLoserScore) {
+    newWinnerScore = newLoserScore
+  }
+  
+  return { [winnerId]: newWinnerScore, [loserId]: newLoserScore }
 }
 
-export async function setRating(userId, albumId, albumMeta, elo = INITIAL_ELO, note = '') {
-  try {    
+// Handle tie in comparison
+export function handleTie(album1Id, album1Score, album2Id, album2Score) {
+  const category1 = getCategoryFromScore(album1Score)
+  const category2 = getCategoryFromScore(album2Score)
+  
+  if (category1 !== category2) {
+    return { [album1Id]: album1Score, [album2Id]: album2Score }
+  }
+  
+  // Move slightly closer together
+  const category = category1
+  const { min, max } = CATEGORIES[category]
+  const mid = (album1Score + album2Score) / 2
+  const adjustment = (max - min) * 0.01 // 1% of range
+  
+  return {
+    [album1Id]: Math.max(min, mid - adjustment),
+    [album2Id]: Math.min(max, mid + adjustment)
+  }
+}
+
+// API functions
+export async function setRating(userId, albumId, albumMeta, score, note = '') {
+  try {
+    const category = getCategoryFromScore(score)
     await axios.post(`${API_BASE}/api/ratings`, {
       userId,
       albumId,
-      elo,
+      score,
       note,
-      album: albumMeta  // send the album metadata
+      category,
+      album: albumMeta
     })
     window.dispatchEvent(new CustomEvent('ratingsChanged'))
   } catch (err) {
@@ -75,19 +148,21 @@ export async function getRating(userId, albumId) {
 export async function getAllRatings(userId) {
   try {
     const res = await axios.get(`${API_BASE}/api/ratings/${userId}`)
-    return res.data.sort((a, b) => (b.updated_at || 0) - (a.updated_at || 0))
+    return res.data.sort((a, b) => (b.score || 0) - (a.score || 0))
   } catch (err) {
     console.error('Failed to fetch ratings:', err)
     return []
   }
 }
 
-export async function getAllElos(userId) {
+export async function getRatingsByCategory(userId, category) {
   try {
     const res = await axios.get(`${API_BASE}/api/ratings/${userId}`)
-    return res.data.map(r => r.rating)
+    return res.data
+      .filter(r => r.category === category)
+      .sort((a, b) => (b.score || 0) - (a.score || 0))
   } catch (err) {
-    console.error('Failed to fetch elos:', err)
+    console.error('Failed to fetch ratings by category:', err)
     return []
   }
 }
@@ -101,6 +176,15 @@ export async function removeRating(userId, albumId) {
   }
 }
 
-export function compareAlbums(winnerElo, loserElo, isTie = false) {
-  return updateElo(winnerElo, loserElo, isTie)
+// Legacy function for compatibility
+export function scoreAlbumByRank(position, totalAlbums) {
+  return rankToScore(position, totalAlbums, 'liked')
+}
+
+export function eloToDisplayScore(elo, allElos = []) {
+  if (!allElos || allElos.length === 0) return 5
+  const sorted = allElos.sort((a, b) => b - a)
+  let position = sorted.findIndex(e => e <= elo)
+  if (position === -1) position = sorted.length
+  return scoreAlbumByRank(position, sorted.length)
 }
