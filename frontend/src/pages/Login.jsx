@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
 export default function Login() {
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const nav = useNavigate()
@@ -11,8 +11,9 @@ export default function Login() {
   const submit = async (e) => {
     e.preventDefault()
     try {
+      // Login uses username instead of email
       const res = await axios.post('http://localhost:3000/api/auth/login', {
-        email,
+        username,
         password
       })
       localStorage.setItem('userId', res.data.id)
@@ -29,7 +30,7 @@ export default function Login() {
       <h2>Log in</h2>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 360 }}>
-        <input placeholder="email" value={email} onChange={e => setEmail(e.target.value)} />
+        <input placeholder="username" value={username} onChange={e => setUsername(e.target.value)} />
         <input placeholder="password" type="password" value={password} onChange={e => setPassword(e.target.value)} />
         <button type="submit">Log in</button>
       </form>

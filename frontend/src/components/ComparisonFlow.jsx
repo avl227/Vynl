@@ -118,9 +118,6 @@ export default function ComparisonFlow({ newAlbum, existingAlbums, onComplete, s
           <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#666' }}>
             {newAlbum.artist || newAlbum.album?.artist}
           </p>
-          <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#0a74da' }}>
-            Score: {newAlbumScore.toFixed(1)}
-          </p>
         </button>
 
         <button
@@ -146,9 +143,6 @@ export default function ComparisonFlow({ newAlbum, existingAlbums, onComplete, s
           </p>
           <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#666' }}>
             {currentAlbum.album?.artist}
-          </p>
-          <p style={{ margin: '4px 0 0 0', fontSize: '0.8rem', color: '#0a74da' }}>
-            Score: {currentAlbum.score?.toFixed(1)}
           </p>
         </button>
       </div>

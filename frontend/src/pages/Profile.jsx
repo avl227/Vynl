@@ -37,13 +37,15 @@ export default function Profile() {
   }
 
   const sortedByRating = useMemo(() => {
-    return [...ratings].sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score
-      return (b.updatedAt || 0) - (a.updatedAt || 0)
-    })
+    return [...ratings].sort((a, b) => (b.score || 0) - (a.score || 0))
   }, [ratings])
 
-  const displayedRatings = topRatedView ? sortedByRating : ratings
+  // Recent Activity: sort by most recent (updatedAt descending)
+  const sortedByRecent = useMemo(() => {
+    return [...ratings].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+  }, [ratings])
+
+  const displayedRatings = topRatedView ? sortedByRating : sortedByRecent
 
   const getScoreDisplay = (rating) => {
     return (rating.score || 0).toFixed(1)
@@ -67,16 +69,6 @@ export default function Profile() {
       <div className="profile-actions">
         <button className="rated-albums-button" onClick={() => setTopRatedView(!topRatedView)}>
           {topRatedView ? 'Recent Activity' : `Rated Albums [${ratings.length}]`}
-        </button>
-        <button 
-          className="logout-button" 
-          onClick={() => {
-            localStorage.removeItem('userId');
-            window.location.href = '/';
-          }}
-          style={{ marginLeft: 8, padding: '8px 16px', background: '#f0f0f0', border: '1px solid #ccc', cursor: 'pointer' }}
-        >
-          Log out
         </button>
       </div>
 
