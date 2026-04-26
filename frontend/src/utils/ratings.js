@@ -61,31 +61,26 @@ export function compareAlbums(winnerId, winnerScore, loserId, loserScore) {
   
   const category = winnerCategory
   const { min, max } = CATEGORIES[category]
-  
-  // Calculate new scores - winner should be higher than loser
-  // Use binary search style: place winner relative to loser
   const range = max - min
-  const position = (winnerScore - min) / range  // 0 to 1
   
-  // If winner already higher, increase gap
-  // If winner lower, move winner above loser
   let newWinnerScore, newLoserScore
   
   if (winnerScore > loserScore) {
-    // Winner is already higher - spread them apart more
-    const gap = winnerScore - loserScore
-    const adjustment = Math.max(gap * 0.2, range * 0.05) // At least 5% of range
-    newWinnerScore = Math.min(max, winnerScore + adjustment)
-    newLoserScore = Math.max(min, loserScore - adjustment)
+    // Winner is already higher - spread them apart significantly
+    // New winner gets a boost, loser drops to make room
+    const boost = range * 0.15  // 15% of range
+    const drop = range * 0.10   // 10% of range
+    newWinnerScore = Math.min(max, winnerScore + boost)
+    newLoserScore = Math.max(min, loserScore - drop)
   } else if (winnerScore < loserScore) {
-    // Winner is lower - move winner above loser
+    // Winner is lower - move winner above loser with meaningful gap
     // Place winner slightly above loser
-    newWinnerScore = Math.min(max, loserScore + range * 0.05)
+    newWinnerScore = Math.min(max, loserScore + range * 0.08)
     newLoserScore = Math.max(min, loserScore)
   } else {
-    // Same score - give winner a small boost
-    newWinnerScore = Math.min(max, winnerScore + range * 0.03)
-    newLoserScore = Math.max(min, loserScore - range * 0.03)
+    // Same score - give winner a meaningful boost
+    newWinnerScore = Math.min(max, winnerScore + range * 0.10)
+    newLoserScore = Math.max(min, loserScore - range * 0.05)
   }
   
   // Ensure winner >= loser
