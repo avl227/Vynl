@@ -6,6 +6,10 @@ import AlbumDetail from './pages/AlbumDetail'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Profile from './pages/Profile'
+import Followers from './pages/Followers'
+import Following from './pages/Following'
+import FindFriends from './pages/FindFriends'
+import UserProfile from './pages/UserProfile'
 
 // Landing page with Sign up and Log in options
 function Landing() {
@@ -49,6 +53,10 @@ export default function App() {
         <Route path="/" element={isLoggedIn ? <Discover searchValue={searchValue} /> : <Landing />} />
         <Route path="/album/:id" element={isLoggedIn ? <AlbumDetail /> : <Navigate to="/" />} />
         <Route path="/profile" element={isLoggedIn ? <Profile /> : <Navigate to="/" />} />
+        <Route path="/followers/:userId" element={isLoggedIn ? <Followers /> : <Navigate to="/" />} />
+        <Route path="/following/:userId" element={isLoggedIn ? <Following /> : <Navigate to="/" />} />
+        <Route path="/find-friends" element={isLoggedIn ? <FindFriends /> : <Navigate to="/" />} />
+        <Route path="/user/:userId" element={isLoggedIn ? <UserProfile /> : <Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
   )

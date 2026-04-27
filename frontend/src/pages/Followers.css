@@ -1,0 +1,66 @@
+.followers-page {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.back-button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: #666;
+  margin-bottom: 20px;
+  padding: 0;
+}
+
+.back-button:hover {
+  color: #000;
+}
+
+.followers-page h1 {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.empty {
+  color: #666;
+  font-style: italic;
+}
+
+.user-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.user-item {
+  padding: 12px;
+  border-bottom: 1px solid #000;
+}
+
+.user-item:last-child {
+  border-bottom: none;
+}
+
+.user-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.user-link:hover {
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.user-avatar {
+  font-size: 24px;
+}
+
+.user-name {
+  font-size: 16px;
+  font-weight: 500;
+}

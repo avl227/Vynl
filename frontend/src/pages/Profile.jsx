@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { getAllRatings, removeRating, getDisplayScore } from '../utils/ratings'
 import profile from '../data/vynl-profile.png'
 import './Profile.css'
@@ -11,6 +11,8 @@ export default function Profile() {
   const [updateTrigger, setUpdateTrigger] = useState(0)
   const [ratings, setRatings] = useState([])
   const [user, setUser] = useState(null)
+  const [followerCount, setFollowerCount] = useState(0)
+  const [followingCount, setFollowingCount] = useState(0)
 
   useEffect(() => {
     const handleRatingsChange = () => {
@@ -28,6 +30,15 @@ export default function Profile() {
         .then(res => res.json())
         .then(data => setUser(data))
         .catch(err => console.error('Failed to fetch user:', err))
+      // Fetch followers/following counts
+      fetch(`http://localhost:3000/api/followers/${userId}`)
+        .then(res => res.json())
+        .then(data => setFollowerCount(data.length))
+        .catch(err => console.error('Failed to fetch followers:', err))
+      fetch(`http://localhost:3000/api/following/${userId}`)
+        .then(res => res.json())
+        .then(data => setFollowingCount(data.length))
+        .catch(err => console.error('Failed to fetch following:', err))
     }
   }, [userId, updateTrigger])
 
@@ -60,8 +71,8 @@ export default function Profile() {
           <p className="profile-bio">Vinyl collector. Rating everything I spin.</p>
           <div className="profile-stats">
             <div><strong>{ratings.length}</strong><div>Ratings</div></div>
-            <div><strong>0</strong><div>Followers</div></div>
-            <div><strong>0</strong><div>Following</div></div>
+            <div><Link to={`/followers/${userId}`}><strong>{followerCount}</strong><div>Followers</div></Link></div>
+            <div><Link to={`/following/${userId}`}><strong>{followingCount}</strong><div>Following</div></Link></div>
           </div>
         </div>
       </header>
@@ -69,6 +80,9 @@ export default function Profile() {
       <div className="profile-actions">
         <button className="rated-albums-button" onClick={() => setTopRatedView(!topRatedView)}>
           {topRatedView ? 'Recent Activity' : `Rated Albums [${ratings.length}]`}
+        </button>
+        <button className="find-friends-button" onClick={() => navigate('/find-friends')}>
+          Find Friends
         </button>
       </div>
 
