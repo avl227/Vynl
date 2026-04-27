@@ -42,12 +42,13 @@ app.post('/api/auth/signup', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
   // Handle login: verify credentials, return JWT or session
   try {
-    const { email, password } = req.body
+    const { username, password } = req.body
     const result = await query(
-      'SELECT id, username, email, password_hash FROM users WHERE email = $1',
-      [email]
+      'SELECT id, username, email, password_hash FROM users WHERE username = $1',
+      [username]
     )
     const user = result.rows[0]
+    if (!user) return res.status(401).json({ error: 'Invalid credentials' })
     const isValid = await bcrypt.compare(password, user.password_hash)
     if (!isValid) return res.status(401).json({ error: 'Invalid credentials' })
     res.json({ id: user.id, username: user.username, email: user.email })
@@ -60,11 +61,12 @@ app.post('/api/auth/login', async (req, res) => {
 app.post('/api/ratings', async (req, res) => {
   // Save rating to db
   try {
-    const { userId, albumId, elo, note, album } = req.body  // Accept album data
-    const albumJson = JSON.stringify(album)  // Store as JSON
+    const { userId, albumId, score, note, album, category } = req.body
+    // Convert score to number explicitly
+    const scoreNum = Number(score)
     const result = await query(
-      'INSERT INTO ratings (user_id, album_id, rating, note, album_data) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (user_id, album_id) DO UPDATE SET rating = $3, note = $4, album_data = $5, updated_at = CURRENT_TIMESTAMP RETURNING *',
-      [userId, albumId, elo, note, albumJson]
+      'INSERT INTO ratings (user_id, album_id, score, rating, note, album_data, category) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (user_id, album_id) DO UPDATE SET score = $3, rating = $4, note = $5, album_data = $6, category = $7, updated_at = CURRENT_TIMESTAMP RETURNING *',
+      [userId, albumId, scoreNum, String(scoreNum), note, album, category]
     )
     res.json(result.rows[0])
   } catch (err) {
@@ -78,13 +80,14 @@ app.get('/api/ratings/:userId', async (req, res) => {
   try {
     const { userId } = req.params
     const result = await query(
-      'SELECT id, album_id, rating, note, album_data, updated_at FROM ratings WHERE user_id = $1 ORDER BY rating DESC',
+      'SELECT id, album_id, score, note, album_data, category, updated_at FROM ratings WHERE user_id = $1 ORDER BY score DESC',
       [userId]
     )
     const ratings = result.rows.map(r => ({
       id: r.id,
       album_id: r.album_id,
-      rating: r.rating,
+      score: r.score,
+      category: r.category,
       note: r.note,
       album: r.album_data || {},
       updatedAt: r.updated_at  
