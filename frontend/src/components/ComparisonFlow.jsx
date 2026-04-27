@@ -6,10 +6,12 @@ export default function ComparisonFlow({ newAlbum, existingAlbums, onComplete, s
   const [searchWindow, setSearchWindow] = useState({ low: 0, high: 0 })
   const [newAlbumScore, setNewAlbumScore] = useState(CATEGORIES[sentiment]?.initial || 10.0)
 
-  // Sort albums by score for binary search
+  // Remove the album being rated (if present) to avoid self-comparison
   const sortedAlbums = useMemo(() => {
-    return [...existingAlbums].sort((a, b) => (b.score || 0) - (a.score || 0))
-  }, [existingAlbums])
+    return [...existingAlbums]
+      .filter(a => (a.album_id || a.id) !== newAlbum.id)
+      .sort((a, b) => (b.score || 0) - (a.score || 0))
+  }, [existingAlbums, newAlbum.id])
 
   const { min: floor, max: ceiling } = CATEGORIES[sentiment] || { min: 0, max: 10 }
 
