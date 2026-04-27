@@ -18,14 +18,28 @@ export default function ComparisonFlow({ newAlbum, existingAlbums, onComplete, s
     const total = albums.length
     if (total === 0) return {}
 
-    const step = (ceiling - floor) / (total - 1)
     const scores = {}
-
-    albums.forEach((album, i) => {
-      const id = album.album_id || album.id
+    // Small list scoring: compressed range for <5 albums
+    if (total === 1) {
+      const id = albums[0].album_id || albums[0].id
+      scores[id] = ceiling
+      return scores
+    }
+    if (total < 5) {
+      // Step is always 1.0, but never below floor
+      for (let i = 0; i < total; ++i) {
+        const id = albums[i].album_id || albums[i].id
+        const score = Math.max(ceiling - i * 1.0, floor)
+        scores[id] = score
+      }
+      return scores
+    }
+    // 5 or more: full spread
+    const step = (ceiling - floor) / (total - 1)
+    for (let i = 0; i < total; ++i) {
+      const id = albums[i].album_id || albums[i].id
       scores[id] = ceiling - (i * step)
-    })
-
+    }
     return scores
   }
 
