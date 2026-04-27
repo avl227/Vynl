@@ -95,6 +95,8 @@
   text-align: left;
   cursor: pointer;
   font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
 }
 
 .dropdown-item:hover {

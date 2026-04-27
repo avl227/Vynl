@@ -92,9 +92,9 @@ export default function UserProfile() {
 
       <div className="profile-actions">
         {isFollowing ? (
-          <button className="unfollow-button" onClick={handleUnfollow}>Unfollow</button>
+          <button className="unfollow-button" onClick={handleUnfollow}>UNFOLLOW</button>
         ) : (
-          <button className="follow-button" onClick={handleFollow}>Follow</button>
+          <button className="follow-button" onClick={handleFollow}>FOLLOW</button>
         )}
       </div>
 

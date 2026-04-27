@@ -14,16 +14,19 @@ import UserProfile from './pages/UserProfile'
 // Landing page with Sign up and Log in options
 function Landing() {
   return (
-    <main style={{ padding: 40, textAlign: 'center' }}>
-      <h1 style={{ fontSize: 48, marginBottom: 8 }}>Vynl</h1>
-      <p style={{ fontSize: 18, marginBottom: 40 }}>Rate and compare your favorite albums</p>
-      <div style={{ display: 'flex', gap: 20, justifyContent: 'center' }}>
-        <Link to="/signup" style={{ padding: '16px 32px', background: '#000', color: '#fff', textDecoration: 'none', fontSize: 18, fontWeight: 'bold' }}>
-          Sign up
-        </Link>
-        <Link to="/login" style={{ padding: '16px 32px', background: '#fff', color: '#000', border: '2px solid #000', textDecoration: 'none', fontSize: 18, fontWeight: 'bold' }}>
-          Log in
-        </Link>
+    <main className="landing-page">
+      <div className="landing-content">
+        <div className="landing-logo">💿</div>
+        <h1 className="landing-title">Vynl</h1>
+        <p className="landing-tagline">Rate and compare your favorite albums</p>
+        <div className="landing-actions">
+          <Link to="/signup" className="btn btn-primary">
+            Sign up
+          </Link>
+          <Link to="/login" className="btn btn-secondary">
+            Log in
+          </Link>
+        </div>
       </div>
     </main>
   )

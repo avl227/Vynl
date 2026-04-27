@@ -58,14 +58,14 @@
 }
 
 .rated-albums-button:hover {
-  background: #ff7a1a;
+  background: #000;
   color: #fff1cd;
 }
 
 .find-friends-button {
-  background: #000;
+  background: #ff8c42;
   border: 1px solid #000;
-  color: #fff;
+  color: #000;
   font-family: 'Inter', sans-serif;
   font-weight: 700;
   padding: 14px 20px;
@@ -75,7 +75,8 @@
 }
 
 .find-friends-button:hover {
-  background: #333;
+  background: #000;
+  color:#fff1cd;
 }
 
 .ratings-feed {

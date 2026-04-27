@@ -65,10 +65,10 @@ export default function Navbar({ searchValue, onSearchChange }) {
         {dropdownOpen && (
           <div className="profile-dropdown">
             <Link to="/profile" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
-              Profile
+              PROFILE
             </Link>
             <button className="dropdown-item" onClick={handleLogout}>
-              Log out
+              LOG OUT
             </button>
           </div>
         )}

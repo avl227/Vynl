@@ -1,17 +1,19 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
 
 export default function Login() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
   const nav = useNavigate()
 
   const submit = async (e) => {
     e.preventDefault()
+    setError('')
+    setLoading(true)
     try {
-      // Login uses username instead of email
       const res = await axios.post('http://localhost:3000/api/auth/login', {
         username,
         password
@@ -20,20 +22,54 @@ export default function Login() {
       window.dispatchEvent(new Event('userLoggedIn'))
       nav('/')
     } catch (err) {
-      setError('Invalid credentials')
-      console.error(err)
+      setError('Invalid username or password')
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <main style={{ padding: 20 }}>
-      <h2>Log in</h2>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 360 }}>
-        <input placeholder="username" value={username} onChange={e => setUsername(e.target.value)} />
-        <input placeholder="password" type="password" value={password} onChange={e => setPassword(e.target.value)} />
-        <button type="submit">Log in</button>
-      </form>
+    <main className="auth-page">
+      <div className="auth-card">
+        <div className="auth-header">
+          <div className="auth-logo">💿</div>
+          <h2 className="auth-title">Welcome back</h2>
+          <p className="auth-subtitle">Log in to continue</p>
+        </div>
+        
+        {error && <div className="auth-error">{error}</div>}
+        
+        <form onSubmit={submit} className="auth-form">
+          <div className="form-group">
+            <label className="form-label">Username</label>
+            <input 
+              className="form-input"
+              placeholder="Enter your username" 
+              value={username} 
+              onChange={e => setUsername(e.target.value)} 
+            />
+          </div>
+          
+          <div className="form-group">
+            <label className="form-label">Password</label>
+            <input 
+              className="form-input"
+              placeholder="Enter your password" 
+              type="password" 
+              value={password} 
+              onChange={e => setPassword(e.target.value)} 
+            />
+          </div>
+          
+          <button type="submit" className="auth-button" disabled={loading}>
+            {loading ? 'Logging in...' : 'Log in'}
+          </button>
+        </form>
+        
+        <div className="auth-footer">
+          Don't have an account? <Link to="/signup">Sign up</Link>
+        </div>
+      </div>
     </main>
   )
 }

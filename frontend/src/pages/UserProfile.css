@@ -75,31 +75,31 @@
 
 .follow-button,
 .unfollow-button {
-  padding: 12px 32px;
-  font-size: 16px;
-  font-weight: 600;
+  padding: 14px 20px;
+  font-size: 12px;
+  font-weight: 700;
   border: none;
   border-radius: 8px;
   cursor: pointer;
+  border: 1px solid #000;
 }
 
 .follow-button {
-  background: #000;
-  color: #fff;
+  background: #ff8c42;
+  color: #000;
 }
 
 .follow-button:hover {
-  background: #333;
+  background: #000;
 }
 
 .unfollow-button {
-  background: #fff;
+  background: #ff8c42;
   color: #000;
-  border: 2px solid #000;
 }
 
 .unfollow-button:hover {
-  background: #f5f5f5;
+  background: #000;
 }
 
 .ratings-feed {
